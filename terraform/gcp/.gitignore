@@ -1,0 +1,21 @@
+node_modules/
+.next/
+__pycache__/
+*.pyc
+test-results/
+.env
+.env.local
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+
+# Terraform lock
+.terraform.lock.hcl
+
+
+__pycache__/
+.env
+
