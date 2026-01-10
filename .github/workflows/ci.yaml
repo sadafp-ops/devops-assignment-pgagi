@@ -55,21 +55,24 @@ jobs:
         run: npx playwright install --with-deps
 
       # --------------------------------------------------
-      # Start Backend for E2E
+      # Start Backend (E2E)
       # --------------------------------------------------
-      - name: Start Backend (E2E)
+      - name: Start Backend for E2E
         run: |
           cd backend
           pip install -r requirements.txt
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
 
       # --------------------------------------------------
-      # Start Frontend for E2E (IMPORTANT FIX)
+      # Start Frontend (E2E)
+      # IMPORTANT: Next.js MUST run on 3000 locally
       # --------------------------------------------------
-      - name: Start Frontend (E2E)
+      - name: Start Frontend for E2E
         run: |
           cd frontend
-          NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev -- --port 3000 &
+          NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev -- -p 3000 &
+          sleep 10
 
       # --------------------------------------------------
       # Run Playwright Tests
@@ -81,7 +84,7 @@ jobs:
         run: npm run test:e2e
 
       # --------------------------------------------------
-      # AWS Auth (ECR)
+      # AWS Authentication (ECR)
       # --------------------------------------------------
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -99,7 +102,7 @@ jobs:
             $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
       # --------------------------------------------------
-      # ✅ CREATE ECR REPOS IF NOT EXISTS (FIX)
+      # Ensure ECR Repositories Exist (SAFE & REQUIRED)
       # --------------------------------------------------
       - name: Ensure ECR repositories exist
         run: |
@@ -116,14 +119,14 @@ jobs:
               --region $AWS_REGION
 
       # --------------------------------------------------
-      # GCP Auth (Artifact Registry)
+      # GCP Authentication (Artifact Registry)
       # --------------------------------------------------
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Configure Docker for GCP
+      - name: Configure Docker for GCP Artifact Registry
         run: |
           gcloud auth configure-docker $GCP_REGION-docker.pkg.dev --quiet
 
