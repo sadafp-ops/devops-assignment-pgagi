@@ -6,7 +6,7 @@ on:
       - develop
 
 env:
-  AWS_REGION: ap-south-1
+  AWS_REGION: eu-north-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: us-central1
