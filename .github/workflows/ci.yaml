@@ -1,4 +1,6 @@
-name: CI - Develop
+
+name: Devops CI/CD Pipeline
+
 
 on:
   push:
