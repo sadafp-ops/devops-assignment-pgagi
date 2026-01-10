@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# Prevent parallel prod deployments
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 env:
   AWS_REGION: eu-north-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -14,17 +19,18 @@ env:
 
 jobs:
   # ==================================================
-  # AWS DEPLOY (ECS + ALB)
+  # AWS DEPLOY (ECS FARGATE + ALB)
   # ==================================================
   deploy-aws:
-    name: Deploy to AWS (ECS)
+    name: Deploy to AWS (ECS + ALB)
     runs-on: ubuntu-latest
+    environment: production-aws
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # AWS Auth
+      # AWS Authentication
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -32,7 +38,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Terraform
+      # Terraform Setup
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -54,12 +60,14 @@ jobs:
   deploy-gcp:
     name: Deploy to GCP (Cloud Run)
     runs-on: ubuntu-latest
+    environment: production-gcp
+    needs: deploy-aws   # optional, remove if you want parallel deploys
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # GCP Auth
+      # GCP Authentication
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -70,7 +78,7 @@ jobs:
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
 
-      # Terraform
+      # Terraform Setup
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
