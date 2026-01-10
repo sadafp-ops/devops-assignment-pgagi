@@ -3,7 +3,7 @@ name: CI - Develop
 on:
   push:
     branches:
-      - develop
+      - develop01
 
 env:
   AWS_REGION: eu-north-1
