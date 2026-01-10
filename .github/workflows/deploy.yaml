@@ -58,10 +58,10 @@ jobs:
   # GCP DEPLOY (CLOUD RUN)
   # ==================================================
   deploy-gcp:
-    name: Deploy to GCP (Cloud Run)
+    name: Deploy to GCP (GCP Cloud Run)
     runs-on: ubuntu-latest
     environment: production-gcp
-    needs: deploy-aws   # optional, remove if you want parallel deploys
+    needs: deploy-aws   # remove if you want parallel deploys
 
     steps:
       - name: Checkout repository
