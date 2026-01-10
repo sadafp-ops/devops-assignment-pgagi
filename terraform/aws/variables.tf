@@ -1,16 +1,14 @@
 variable "aws_region" {
-  description = "AWS Region"
-  default     = "eu-north-1"
-}
-
-variable "project_name" {
-  default = "devops-assignment"
-}
-
-variable "frontend_image" {
-  description = "ECR frontend image URI"
+  type    = string
+  default = "eu-north-1"
 }
 
 variable "backend_image" {
+  type        = string
   description = "ECR backend image URI"
+}
+
+variable "frontend_image" {
+  type        = string
+  description = "ECR frontend image URI"
 }
