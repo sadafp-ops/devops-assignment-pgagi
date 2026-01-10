@@ -49,7 +49,7 @@ jobs:
             -var="backend_image=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-backend:${{ github.event.workflow_run.head_sha }}" \
             -var="frontend_image=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-frontend:${{ github.event.workflow_run.head_sha }}"
 
-      # ---------------- GCP PRODUCTION ----------------
+      # ---------------- GCP PRODUCTION -------------------
       - name: Deploy GCP Production
         working-directory: terraform/gcp
         run: |
