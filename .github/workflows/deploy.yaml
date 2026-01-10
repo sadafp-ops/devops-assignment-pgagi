@@ -37,7 +37,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
 
-      - name: Deploy AWS Resources
+      - name: Deploy AWS 
         working-directory: terraform/aws
         run: |
           terraform init -upgrade
