@@ -1,13 +1,13 @@
-# =========================
+####################################
 # ECS CLUSTER
-# =========================
+####################################
 resource "aws_ecs_cluster" "main" {
   name = "assignment-cluster"
 }
 
-# =========================
+####################################
 # BACKEND TASK DEFINITION
-# =========================
+####################################
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend"
   requires_compatibilities = ["FARGATE"]
@@ -20,6 +20,7 @@ resource "aws_ecs_task_definition" "backend" {
     {
       name  = "backend"
       image = var.backend_image
+      essential = true
 
       portMappings = [
         {
@@ -31,9 +32,9 @@ resource "aws_ecs_task_definition" "backend" {
   ])
 }
 
-# =========================
+####################################
 # FRONTEND TASK DEFINITION
-# =========================
+####################################
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "frontend"
   requires_compatibilities = ["FARGATE"]
@@ -46,6 +47,7 @@ resource "aws_ecs_task_definition" "frontend" {
     {
       name  = "frontend"
       image = var.frontend_image
+      essential = true
 
       portMappings = [
         {
@@ -57,40 +59,14 @@ resource "aws_ecs_task_definition" "frontend" {
   ])
 }
 
-# =========================
-# BACKEND TARGET GROUP
-# =========================
-resource "aws_lb_target_group" "backend" {
-  name        = "backend-tg"
-  port        = 8080
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = data.aws_vpc.main.id
-
-  health_check {
-    path = "/health"
-  }
-}
-
-# =========================
-# FRONTEND TARGET GROUP
-# =========================
-resource "aws_lb_target_group" "frontend" {
-  name        = "frontend-tg"
-  port        = 3000
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = data.aws_vpc.main.id
-}
-
-# =========================
+####################################
 # BACKEND ECS SERVICE
-# =========================
+####################################
 resource "aws_ecs_service" "backend" {
   name            = "backend-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -105,17 +81,19 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8080
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [
+    aws_lb_listener.http
+  ]
 }
 
-# =========================
+####################################
 # FRONTEND ECS SERVICE
-# =========================
+####################################
 resource "aws_ecs_service" "frontend" {
   name            = "frontend-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -130,5 +108,7 @@ resource "aws_ecs_service" "frontend" {
     container_port   = 3000
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [
+    aws_lb_listener.http
+  ]
 }
