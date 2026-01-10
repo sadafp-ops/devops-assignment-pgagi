@@ -3,7 +3,7 @@ name: CD - Production Deploy
 on:
   push:
     branches:
-      - main
+      - main        # 🔥 ONLY main triggers CD
 
 concurrency:
   group: production-deploy
@@ -16,33 +16,45 @@ env:
   GCP_REGION: us-central1
 
 jobs:
-  deploy-prod:
+  deploy-production:
+    name: Deploy to Production (AWS + GCP)
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-      - name: Checkout main
+      # ===============================
+      # Checkout
+      # ===============================
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ---------- AWS AUTH ----------
-      - name: AWS Auth
+      # ===============================
+      # AWS AUTH
+      # ===============================
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ---------- GCP AUTH ----------
-      - name: GCP Auth
+      # ===============================
+      # GCP AUTH
+      # ===============================
+      - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # ---------- Terraform ----------
+      # ===============================
+      # Terraform
+      # ===============================
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # ---------- AWS PRODUCTION ----------
+      # ===============================
+      # AWS PRODUCTION DEPLOY
+      # ===============================
       - name: Deploy AWS Production
         working-directory: terraform/aws
         run: |
@@ -51,7 +63,9 @@ jobs:
             -var="backend_image=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-backend:${{ github.sha }}" \
             -var="frontend_image=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/devops-frontend:${{ github.sha }}"
 
-      # ---------- GCP PRODUCTION ----------
+      # ===============================
+      # GCP PRODUCTION DEPLOY
+      # ===============================
       - name: Deploy GCP Production
         working-directory: terraform/gcp
         run: |
