@@ -1,4 +1,4 @@
-name: DevOps CI + Staging CD
+name: CI - Develop
 
 on:
   push:
@@ -12,132 +12,123 @@ env:
   GCP_REGION: us-central1
 
 jobs:
-# ==================================================
-# 1️⃣ CI JOB
-# ==================================================
   ci:
-    name: CI - Tests & Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # =====================
+      # Checkout
+      # =====================
+      - uses: actions/checkout@v4
 
-      # ---------- Backend ----------
+      # =====================
+      # Backend Tests
+      # =====================
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Backend tests
+      - name: Backend unit tests
         working-directory: backend
         run: |
           pip install -r requirements.txt
           pytest
 
-      # ---------- Frontend ----------
+      # =====================
+      # Frontend Setup
+      # =====================
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Frontend E2E
+      - name: Install frontend deps
         working-directory: frontend
         run: |
           npm install
           npx playwright install --with-deps
 
+      # =====================
+      # Start Backend (E2E)
+      # =====================
       - name: Start backend
         run: |
           cd backend
+          pip install -r requirements.txt
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          sleep 5
+          
+          # wait until backend is ready
+          for i in {1..10}; do
+            curl -s http://localhost:8000/health && break
+            sleep 2
+          done
 
+      # =====================
+      # Start Frontend (E2E)
+      # =====================
       - name: Start frontend
         run: |
           cd frontend
           NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev -- -p 3000 &
-          sleep 10
+          
+          # wait until frontend is ready
+          for i in {1..10}; do
+            curl -s http://localhost:3000 && break
+            sleep 2
+          done
 
+      # =====================
+      # Playwright E2E
+      # =====================
       - name: Run Playwright tests
         working-directory: frontend
         env:
           FRONTEND_URL: http://localhost:3000
         run: npm run test:e2e
 
-      # ---------- AWS ----------
+      # =====================
+      # AWS Auth
+      # =====================
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login ECR
-        run: aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password \
+          | docker login \
+            --username AWS \
+            --password-stdin \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-      # ---------- GCP ----------
+      # =====================
+      # GCP Auth
+      # =====================
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev --quiet
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev --quiet
 
-      # ---------- Build & Push ----------
-      - name: Build & Push Backend
+      # =====================
+      # Build & Push Images
+      # =====================
+      - name: Build & Push Backend Image
         run: |
           docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:${{ github.sha }} backend
           docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:${{ github.sha }} \
             $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/backend:${{ github.sha }}
+
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:${{ github.sha }}
           docker push $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/backend:${{ github.sha }}
 
-      - name: Build & Push Frontend
+      - name: Build & Push Frontend Image
         run: |
           docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:${{ github.sha }} frontend
           docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:${{ github.sha }} \
             $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/frontend:${{ github.sha }}
+
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:${{ github.sha }}
           docker push $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/frontend:${{ github.sha }}
-
-# ==================================================
-# 2️⃣ CD STAGING
-# ==================================================
-  deploy-staging:
-    name: CD - Staging Deploy
-    needs: ci
-    runs-on: ubuntu-latest
-    environment: staging
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # ---------- AWS ----------
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      # ---------- GCP ----------
-      - uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      # ---------- Terraform ----------
-      - uses: hashicorp/setup-terraform@v3
-
-      - name: Deploy AWS Staging
-        working-directory: terraform/aws
-        run: |
-          terraform init -upgrade
-          terraform apply -auto-approve \
-            -var="backend_image=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:${{ github.sha }}" \
-            -var="frontend_image=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:${{ github.sha }}"
-
-      - name: Deploy GCP Staging
-        working-directory: terraform/gcp
-        run: |
-          terraform init -upgrade
-          terraform apply -auto-approve \
-            -var="project_id=${{ env.GCP_PROJECT_ID }}" \
-            -var="region=${{ env.GCP_REGION }}" \
-            -var="backend_image=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/devops/backend:${{ github.sha }}" \
-            -var="frontend_image=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/devops/frontend:${{ github.sha }}"
