@@ -1,7 +1,6 @@
 #################################
-# Backend Cloud Run Service
+# Backend
 #################################
-
 resource "google_cloud_run_service" "backend" {
   name     = "backend"
   location = var.region
@@ -32,9 +31,8 @@ resource "google_cloud_run_service_iam_member" "backend_public" {
 }
 
 #################################
-# Frontend Cloud Run Service
+# Frontend
 #################################
-
 resource "google_cloud_run_service" "frontend" {
   name     = "frontend"
   location = var.region
