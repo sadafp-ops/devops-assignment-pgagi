@@ -15,3 +15,40 @@ resource "aws_subnet" "public_1b" {
   availability_zone       = "eu-north-1b"
   map_public_ip_on_launch = true
 }
+####################################
+# INTERNET GATEWAY
+####################################
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "assignment-igw"
+  }
+}
+####################################
+# PUBLIC ROUTE TABLE
+####################################
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "public-rt"
+  }
+}
+####################################
+# ROUTE TABLE ASSOCIATIONS
+####################################
+resource "aws_route_table_association" "public_1a" {
+  subnet_id      = aws_subnet.public_1a.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_1b" {
+  subnet_id      = aws_subnet.public_1b.id
+  route_table_id = aws_route_table.public.id
+}
