@@ -5,7 +5,14 @@ resource "aws_lb" "app" {
   name               = "assignment-alb"
   load_balancer_type = "application"
   internal           = false
-  subnets            = data.aws_subnets.public.ids
+
+  security_groups = [aws_security_group.alb.id]
+
+  # ALB requires at least 2 subnets in 2 AZs
+   subnets = [
+    aws_subnet.public_1a.id,
+    aws_subnet.public_1b.id
+  ]
 }
 
 ####################################
@@ -35,10 +42,15 @@ resource "aws_lb_target_group" "backend" {
   port        = 8080
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id
 
   health_check {
-    path = "/health"
+    path                = "/health"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
   }
 }
 
@@ -50,7 +62,7 @@ resource "aws_lb_target_group" "frontend" {
   port        = 3000
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id
 }
 
 ####################################

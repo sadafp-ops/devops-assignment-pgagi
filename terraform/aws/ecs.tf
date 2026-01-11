@@ -69,11 +69,16 @@ resource "aws_ecs_service" "backend" {
   desired_count   = 2
   launch_type     = "FARGATE"
 
+  
   network_configuration {
-    subnets         = data.aws_subnets.public.ids
-    security_groups = [aws_security_group.ecs.id]
-    assign_public_ip = true
-  }
+  subnets = [
+    aws_subnet.public_1a.id,
+    aws_subnet.public_1b.id
+  ]
+
+  security_groups  = [aws_security_group.ecs.id]
+  assign_public_ip = true
+}
 
   load_balancer {
     target_group_arn = aws_lb_target_group.backend.arn
@@ -97,10 +102,16 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = data.aws_subnets.public.ids
-    security_groups = [aws_security_group.ecs.id]
-    assign_public_ip = true
-  }
+  subnets = [
+    aws_subnet.public_1a.id,
+    aws_subnet.public_1b.id
+  ]
+
+  security_groups  = [aws_security_group.ecs.id]
+  assign_public_ip = true
+}
+
+
 
   load_balancer {
     target_group_arn = aws_lb_target_group.frontend.arn
