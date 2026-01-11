@@ -6,9 +6,11 @@ variable "aws_region" {
 variable "backend_image" {
   type        = string
   description = "ECR backend image URI"
+  default     = "dummy"
 }
 
 variable "frontend_image" {
   type        = string
   description = "ECR frontend image URI"
+  default     = "dummy"
 }
