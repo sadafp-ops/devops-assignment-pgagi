@@ -21,23 +21,16 @@ resource "aws_lb" "app" {
 }
 
 ####################################
-# HTTP LISTENER
+# TARGET GROUPS
 ####################################
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.app.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  # DEFAULT ACTION MUST POINT TO A TG
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
-  }
+resource "aws_lb_target_group" "frontend" {
+  name        = "frontend-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = aws_vpc.main.id
 }
 
-####################################
-# BACKEND TARGET GROUP
-####################################
 resource "aws_lb_target_group" "backend" {
   name        = "backend-tg"
   port        = 8080
@@ -56,18 +49,22 @@ resource "aws_lb_target_group" "backend" {
 }
 
 ####################################
-# FRONTEND TARGET GROUP
+# HTTP LISTENER
 ####################################
-resource "aws_lb_target_group" "frontend" {
-  name        = "frontend-tg"
-  port        = 3000
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = aws_vpc.main.id
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  # Default → Frontend
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
 }
 
 ####################################
-# LISTENER RULES
+# LISTENER RULE (BACKEND)
 ####################################
 resource "aws_lb_listener_rule" "backend" {
   listener_arn = aws_lb_listener.http.arn
@@ -83,28 +80,4 @@ resource "aws_lb_listener_rule" "backend" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend.arn
   }
-
-  depends_on = [
-    aws_lb_target_group.backend
-  ]
-}
-
-resource "aws_lb_listener_rule" "frontend" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 20
-
-  condition {
-    path_pattern {
-      values = ["/*"]
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
-  }
-
-  depends_on = [
-    aws_lb_target_group.frontend
-  ]
 }
