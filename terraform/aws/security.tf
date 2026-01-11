@@ -1,9 +1,13 @@
-# ALB Security Group
+####################################
+# ALB SECURITY GROUP
+####################################
 resource "aws_security_group" "alb" {
-  name   = "alb-sg"
-  vpc_id = data.aws_vpc.main.id
+  name        = "alb-sg"
+  description = "Allow HTTP traffic from internet"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "HTTP from internet"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -18,21 +22,28 @@ resource "aws_security_group" "alb" {
   }
 }
 
-# ECS Security Group
+####################################
+# ECS SECURITY GROUP
+####################################
 resource "aws_security_group" "ecs" {
-  name   = "ecs-sg"
-  vpc_id = data.aws_vpc.main.id
+  name        = "ecs-sg"
+  description = "Allow traffic from ALB to ECS tasks"
+  vpc_id      = aws_vpc.main.id
 
+  # Frontend (React / Next / Node)
   ingress {
+    description     = "Frontend traffic from ALB"
     from_port       = 3000
     to_port         = 3000
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
 
+  # Backend (API)
   ingress {
-    from_port       = 8000
-    to_port         = 8000
+    description     = "Backend traffic from ALB"
+    from_port       = 8080
+    to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
