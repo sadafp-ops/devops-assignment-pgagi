@@ -8,11 +8,11 @@ resource "aws_lb" "app" {
 
   security_groups = [aws_security_group.alb.id]
 
-  # ALB requires at least 2 subnets in 2 AZs.
-   subnets = [
+  subnets = [
     aws_subnet.public_1a.id,
     aws_subnet.public_1b.id
   ]
+
   depends_on = [
     aws_internet_gateway.igw,
     aws_route_table_association.public_1a,
@@ -28,14 +28,10 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
 
+  # DEFAULT ACTION MUST POINT TO A TG
   default_action {
-    type = "fixed-response"
-
-    fixed_response {
-      status_code  = "404"
-      content_type = "text/plain"
-      message_body = "Not Found"
-    }
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
   }
 }
 
@@ -87,6 +83,10 @@ resource "aws_lb_listener_rule" "backend" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend.arn
   }
+
+  depends_on = [
+    aws_lb_target_group.backend
+  ]
 }
 
 resource "aws_lb_listener_rule" "frontend" {
@@ -103,4 +103,8 @@ resource "aws_lb_listener_rule" "frontend" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.frontend.arn
   }
+
+  depends_on = [
+    aws_lb_target_group.frontend
+  ]
 }
