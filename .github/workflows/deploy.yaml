@@ -2,7 +2,7 @@ name: CD - Production Deploy
 
 on:
   workflow_run:
-    workflows: ["CI - Build & Push Images"]
+    workflows: ["CI Pipeline"]
     types:
       - completed
 
