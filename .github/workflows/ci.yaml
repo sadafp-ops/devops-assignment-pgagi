@@ -1,15 +1,17 @@
-name: CI - Develop
+name: CI Pipeline
 
 on:
   push:
     branches:
-      - develop01
+      - develop
+      - main
 
 env:
   AWS_REGION: eu-north-1
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_REGION: us-central1
+  GCP_REPO: devops   # 👈 single source of truth
 
 jobs:
   ci:
@@ -77,11 +79,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login ECR
+      - name: Login to ECR
         run: |
-          aws ecr get-login-password |
-          docker login --username AWS --password-stdin \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+          aws ecr get-login-password \
+          | docker login \
+            --username AWS \
+            --password-stdin \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      # =====================
+      # ✅ OPTION-2: AUTO-CREATE ECR REPOS
+      # =====================
+      - name: Ensure ECR repositories exist
+        run: |
+          aws ecr describe-repositories --repository-names devops-backend \
+            --region $AWS_REGION \
+            || aws ecr create-repository \
+              --repository-name devops-backend \
+              --region $AWS_REGION
+
+          aws ecr describe-repositories --repository-names devops-frontend \
+            --region $AWS_REGION \
+            || aws ecr create-repository \
+              --repository-name devops-frontend \
+              --region $AWS_REGION
 
       # =====================
       # GCP Auth
@@ -89,6 +110,23 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      # =====================
+      # ✅ OPTION-2: AUTO-CREATE ARTIFACT REGISTRY
+      # =====================
+      - name: Ensure Artifact Registry repo exists
+        run: |
+          gcloud artifacts repositories describe $GCP_REPO \
+            --location=$GCP_REGION \
+            || gcloud artifacts repositories create $GCP_REPO \
+              --repository-format=docker \
+              --location=$GCP_REGION \
+              --description="DevOps images"
 
       - name: Configure Docker for GCP
         run: |
@@ -101,18 +139,18 @@ jobs:
         run: |
           docker build \
             -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:ci-${{ github.sha }} \
-            -t $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/backend:ci-${{ github.sha }} \
+            -t $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_REPO/backend:ci-${{ github.sha }} \
             backend
 
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:ci-${{ github.sha }}
-          docker push $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/backend:ci-${{ github.sha }}
+          docker push $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_REPO/backend:ci-${{ github.sha }}
 
       - name: Build & Push Frontend
         run: |
           docker build \
             -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:ci-${{ github.sha }} \
-            -t $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/frontend:ci-${{ github.sha }} \
+            -t $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_REPO/frontend:ci-${{ github.sha }} \
             frontend
 
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:ci-${{ github.sha }}
-          docker push $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/devops/frontend:ci-${{ github.sha }}
+          docker push $GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_REPO/frontend:ci-${{ github.sha }}
