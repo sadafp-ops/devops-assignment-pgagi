@@ -13,6 +13,11 @@ resource "aws_lb" "app" {
     aws_subnet.public_1a.id,
     aws_subnet.public_1b.id
   ]
+  depends_on = [
+    aws_internet_gateway.igw,
+    aws_route_table_association.public_1a,
+    aws_route_table_association.public_1b
+  ]
 }
 
 ####################################
