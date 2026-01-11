@@ -8,7 +8,7 @@ resource "aws_lb" "app" {
 
   security_groups = [aws_security_group.alb.id]
 
-  # ALB requires at least 2 subnets in 2 AZs
+  # ALB requires at least 2 subnets in 2 AZs.
    subnets = [
     aws_subnet.public_1a.id,
     aws_subnet.public_1b.id
