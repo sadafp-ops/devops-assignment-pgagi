@@ -80,9 +80,26 @@ jobs:
 
       - name: Login ECR
         run: |
-          aws ecr get-login-password |
-          docker login --username AWS --password-stdin \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+          aws ecr get-login-password \
+          | docker login \
+            --username AWS \
+            --password-stdin \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      # ✅ OPTION-2 FIX (AUTO CREATE ECR)
+      - name: Ensure ECR repositories exist
+        run: |
+          aws ecr describe-repositories --repository-names devops-backend \
+            --region $AWS_REGION \
+            || aws ecr create-repository \
+              --repository-name devops-backend \
+              --region $AWS_REGION
+
+          aws ecr describe-repositories --repository-names devops-frontend \
+            --region $AWS_REGION \
+            || aws ecr create-repository \
+              --repository-name devops-frontend \
+              --region $AWS_REGION
 
       # =====================
       # GCP Auth
