@@ -1,9 +1,9 @@
-name: CI - Develop
+name: CI Pipeline
 
 on:
   push:
     branches:
-      - develop01
+      - develop
       - main
 
 env:
