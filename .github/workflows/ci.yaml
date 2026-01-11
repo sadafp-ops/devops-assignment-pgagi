@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop01
+      - main
 
 env:
   AWS_REGION: eu-north-1
