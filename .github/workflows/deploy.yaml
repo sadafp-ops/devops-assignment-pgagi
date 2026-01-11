@@ -18,6 +18,7 @@ env:
 
 jobs:
   deploy-prod:
+
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     runs-on: ubuntu-latest
@@ -59,19 +60,8 @@ jobs:
         run: |
           terraform init -upgrade
 
-          # 🔹 ADDITION 1: Listener-rule recovery (safe, one-time)
+<
           terraform apply -auto-approve \
-            -target=aws_lb_listener_rule.backend \
-            -target=aws_lb_listener_rule.frontend \
-            -var="backend_image=dummy" \
-            -var="frontend_image=dummy"
-
-          # 🔹 EXISTING STEP (UNCHANGED)
-          terraform apply -auto-approve \
-            -target=aws_ecs_task_definition.backend \
-            -target=aws_ecs_task_definition.frontend \
-            -target=aws_ecs_service.backend \
-            -target=aws_ecs_service.frontend \
             -var="backend_image=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-backend:ci-${{ github.event.workflow_run.head_sha }}" \
             -var="frontend_image=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/devops-frontend:ci-${{ github.event.workflow_run.head_sha }}"
 
