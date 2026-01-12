@@ -18,8 +18,8 @@ resource "aws_ecs_task_definition" "backend" {
 
   container_definitions = jsonencode([
     {
-      name  = "backend"
-      image = var.backend_image
+      name      = "backend"
+      image     = var.backend_image
       essential = true
 
       portMappings = [
@@ -45,8 +45,8 @@ resource "aws_ecs_task_definition" "frontend" {
 
   container_definitions = jsonencode([
     {
-      name  = "frontend"
-      image = var.frontend_image
+      name      = "frontend"
+      image     = var.frontend_image
       essential = true
 
       portMappings = [
@@ -69,16 +69,15 @@ resource "aws_ecs_service" "backend" {
   desired_count   = 2
   launch_type     = "FARGATE"
 
-  
   network_configuration {
-  subnets = [
-    aws_subnet.public_1a.id,
-    aws_subnet.public_1b.id
-  ]
+    subnets = [
+      aws_subnet.public_1a.id,
+      aws_subnet.public_1b.id
+    ]
 
-  security_groups  = [aws_security_group.ecs.id]
-  assign_public_ip = true
-}
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = true
+  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.backend.arn
@@ -87,7 +86,7 @@ resource "aws_ecs_service" "backend" {
   }
 
   depends_on = [
-    aws_lb_listener_rule.backend
+    aws_lb_listener.http
   ]
 }
 
@@ -102,16 +101,14 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-  subnets = [
-    aws_subnet.public_1a.id,
-    aws_subnet.public_1b.id
-  ]
+    subnets = [
+      aws_subnet.public_1a.id,
+      aws_subnet.public_1b.id
+    ]
 
-  security_groups  = [aws_security_group.ecs.id]
-  assign_public_ip = true
-}
-
-
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = true
+  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.frontend.arn
@@ -120,6 +117,6 @@ resource "aws_ecs_service" "frontend" {
   }
 
   depends_on = [
-    aws_lb_listener_rule.frontend
+    aws_lb_listener.http
   ]
 }
