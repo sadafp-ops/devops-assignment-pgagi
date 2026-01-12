@@ -1,2 +1,2 @@
 # devops-assignment-pgagi
-# secret manager:
+# secret manager
