@@ -1,3 +1,6 @@
+####################################
+# APPLICATION LOAD BALANCER
+####################################
 resource "aws_lb" "app" {
   name               = "assignment-alb"
   load_balancer_type = "application"
@@ -6,11 +9,14 @@ resource "aws_lb" "app" {
   security_groups = [aws_security_group.alb.id]
 
   subnets = [
-    aws_subnet.public_1a.id,
-    aws_subnet.public_1b.id
+    data.aws_subnet.public_1a.id,
+    data.aws_subnet.public_1b.id
   ]
 }
 
+####################################
+# HTTP LISTENER
+####################################
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
   port              = 80
@@ -22,22 +28,31 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+####################################
+# BACKEND TARGET GROUP
+####################################
 resource "aws_lb_target_group" "backend" {
   name        = "backend-tg"
   port        = 8080
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = data.aws_vpc.main.id
 }
 
+####################################
+# FRONTEND TARGET GROUP
+####################################
 resource "aws_lb_target_group" "frontend" {
   name        = "frontend-tg"
   port        = 3000
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = data.aws_vpc.main.id
 }
 
+####################################
+# LISTENER RULES
+####################################
 resource "aws_lb_listener_rule" "backend" {
   listener_arn = aws_lb_listener.http.arn
   priority     = 10

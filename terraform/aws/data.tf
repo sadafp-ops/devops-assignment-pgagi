@@ -1,10 +1,11 @@
 data "aws_vpc" "main" {
-  id = "vpc-0952bdfcfc86ec686"
+  id = "vpc-00101d48fb39d0286"
 }
 
-data "aws_subnets" "public" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
-  }
+data "aws_subnet" "public_1a" {
+  id = "subnet-0e337bacafd5d9cf9"
+}
+
+data "aws_subnet" "public_1b" {
+  id = "subnet-0bdf3a3a7f959466f"
 }
