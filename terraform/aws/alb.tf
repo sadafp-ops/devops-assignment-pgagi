@@ -9,9 +9,11 @@ resource "aws_lb" "app" {
   security_groups = [aws_security_group.alb.id]
 
   subnets = [
-    aws_subnet.public_1a.id,
-    aws_subnet.public_1b.id
+
+    data.aws_subnet.public_1a.id,
+    data.aws_subnet.public_1b.id
   ]
+
 
   depends_on = [
     aws_internet_gateway.igw,
@@ -46,10 +48,11 @@ resource "aws_lb_target_group" "backend" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
   }
+
 }
 
 ####################################
-# HTTP LISTENER
+# HTTP LISTENERs
 ####################################
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
@@ -64,7 +67,33 @@ resource "aws_lb_listener" "http" {
 }
 
 ####################################
+
+# BACKEND TARGET GROUP
+####################################
+resource "aws_lb_target_group" "backend" {
+  name        = "backend-tg"
+  port        = 8080
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = data.aws_vpc.main.id
+}
+
+####################################
+# FRONTEND TARGET GROUP
+####################################
+resource "aws_lb_target_group" "frontend" {
+  name        = "frontend-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = data.aws_vpc.main.id
+}
+
+####################################
+# LISTENER RULES
+
 # LISTENER RULE (BACKEND)
+
 ####################################
 resource "aws_lb_listener_rule" "backend" {
   listener_arn = aws_lb_listener.http.arn

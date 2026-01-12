@@ -1,3 +1,6 @@
 resource "aws_secretsmanager_secret" "backend" {
-  name = "sadaf-secrets02"
+
+  name = "backend-env-v4"
+
+
 }

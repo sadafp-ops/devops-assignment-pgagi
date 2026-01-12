@@ -71,9 +71,13 @@ resource "aws_ecs_service" "backend" {
 
   network_configuration {
     subnets = [
-      aws_subnet.public_1a.id,
-      aws_subnet.public_1b.id
+
+      data.aws_subnet.public_1a.id,
+      data.aws_subnet.public_1b.id
     ]
+
+      
+
 
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
@@ -102,9 +106,13 @@ resource "aws_ecs_service" "frontend" {
 
   network_configuration {
     subnets = [
-      aws_subnet.public_1a.id,
-      aws_subnet.public_1b.id
+
+      data.aws_subnet.public_1a.id,
+      data.aws_subnet.public_1b.id
     ]
+
+      
+
 
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
