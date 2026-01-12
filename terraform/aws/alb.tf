@@ -15,7 +15,7 @@ resource "aws_lb" "app" {
 }
 
 ####################################
-# HTTP LISTENER
+# HTTP LISTENERs
 ####################################
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
