@@ -52,7 +52,7 @@ resource "aws_lb_target_group" "backend" {
 }
 
 ####################################
-# HTTP LISTENER
+# HTTP LISTENERs
 ####################################
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
