@@ -1,9 +1,13 @@
 resource "aws_ecr_repository" "backend" {
-  name                 = "devops-backend01"
+
+  name                 = "devops-backend02"
   force_delete         = true
 }
 
 resource "aws_ecr_repository" "frontend" {
-  name                 = "devops-frontend01"
+  name                 = "devops-frontend02"
   force_delete         = true
+
+  
 }
+
